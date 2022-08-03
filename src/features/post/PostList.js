@@ -1,33 +1,39 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import {selectAllPosts} from "./post_slice"
-import PostAuth from "../users/PostAuth";
-import TimeAgo from "../TimeAgo";
-import ReactionsButtons from "../ReactionsButtons";
+import { useSelector, useDispatch } from "react-redux";
+import { useEffect } from "react";
+import {selectAllPosts, getPostStatus, getpostError,fetchPost} from "./post_slice"
+import PostExcerpt from "./PostExcerpt";
 const PostList = () => {
-  const posts = useSelector(selectAllPosts);
+  const dispatch = useDispatch();
 
+
+  const posts = useSelector(selectAllPosts);
+  const postsStatus = useSelector(getPostStatus);
+  const postsError = useSelector(getpostError);
+
+  useEffect(()=>{
+    if(postsStatus === 'idle'){
+      dispatch(fetchPost());
+    }
+  },[postsStatus, dispatch])
   const numberofPost = posts.length;
   //compares dates and returns a positive or negative 1 to the sort function,
   //then creates a shallow copy of the posts array.
-  const orderedPost = posts.slice().sort((a,b) => b.date.localeCompare(a.date));
 
-  const renderedPost = orderedPost.map((post) => (
-    <article key={post.id} className='mb-1 border rounded border-white bg-light p-4'>
-      <h3>{post.title}</h3>
-      <p className="float-left">
-          <PostAuth userId={post.userId}/>
-          <TimeAgo timestamp={post.date}/>
-      </p>
-      <p>{post.content}</p>
-      <hr></hr>
-      <ReactionsButtons post={post}/>
-    </article>
-  ));
+  let content;
+  if (postsStatus === 'loading'){
+    content = <p>Loading..</p>;
+  }else if (postsStatus === 'succeeded'){
+    const orderedPost = posts.slice().sort((a,b) => b.date.localeCompare(a.date));
+    content = orderedPost.map((post)=> <PostExcerpt key={post.id} post={post}/>)
+  }else if (postsStatus === 'failed'){
+    content = <p>{postsError}</p>
+  }
+
   return (
     <div style={{width:'600px'}} className="m-auto mt-4">
       <h2 className="pb-4">Post {`(${numberofPost})`}</h2>
-      {renderedPost}
+      {content}
     </div>
   );
 };
