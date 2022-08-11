@@ -20,7 +20,8 @@ const ReactionsButtons =({post})=> {
             onClick={()=>{
                 dispatch(reactionAdded({postId:post.id,reaction:name}))
             }}>
-                {emoji} {post.reactions[name]}
+                {/* this ho to access and value in an object using the bracket notation */}
+                {emoji} {post.reactions[name]} 
             </button>
         )
     })

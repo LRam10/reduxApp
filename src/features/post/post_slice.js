@@ -1,4 +1,4 @@
-import { createSlice, nanoid, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice,createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { sub } from "date-fns";
 
@@ -9,6 +9,13 @@ export const fetchPost = createAsyncThunk("post/fetchPosts", async () => {
   return response.data;
 });
 
+export const addNewPost = createAsyncThunk(
+  "posts/addNewPost",
+  async (initialPost) => {
+    const response = await axios.post(POST_URL, initialPost);
+    return response.data;
+  }
+);
 const initialState = {
   posts: [],
   status: "idle", //'idle' | 'loading' | 'succeeded' | `failed'
@@ -18,30 +25,6 @@ const postSlice = createSlice({
   name: "posts",
   initialState,
   reducers: {
-    postAdded: {
-      reducer(state, action) {
-        state.posts.push(action.payload);
-      },
-      prepare(title, content, userId) {
-        return {
-          payload: {
-            id: nanoid(),
-            title,
-            body:content,
-            date: new Date().toISOString(),
-            userId,
-            reactions: {
-              thumbsUp: 0,
-              wow: 0,
-              heart: 0,
-              rocket: 0,
-              tea: 0,
-            },
-          },
-        };
-      },
-    },
-
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload;
       const existingPost = state.posts.find((post) => post.id === postId);
@@ -71,16 +54,29 @@ const postSlice = createSlice({
         });
         //add any fetched posts to the array
         state.posts = loadedPosts;
-
       })
-      .addCase(fetchPost.rejected, (state, action)=>{
-        state.status = 'failed';
+      .addCase(fetchPost.rejected, (state, action) => {
+        state.status = "failed";
         state.error = action.error.message;
       })
+      .addCase(addNewPost.fulfilled, (state, action) => {
+        action.payload.userId = Number(action.payload.userId);
+        action.payload.date = new Date().toISOString();
+        action.payload.reactions = {
+          thumbsUp: 0,
+          wow: 0,
+          heart: 0,
+          rocket: 0,
+          tea: 0,
+        };
+        console.log(action.payload);
+        state.posts.push(action.payload);
+      });
   },
 });
 export const selectAllPosts = (state) => state.posts.posts;
 export const getPostStatus = (state) => state.posts.status;
 export const getpostError = (state) => state.posts.error;
-export const { postAdded, reactionAdded } = postSlice.actions;
+export const selectPostById = (state,postId) => state.posts.posts.find(post => post.id === postId); 
+export const { reactionAdded } = postSlice.actions;
 export default postSlice.reducer;
