@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import {selectAllPosts, getPostStatus, getpostError,fetchPost} from "./post_slice"
 import PostExcerpt from "./PostExcerpt";
+
 const PostList = () => {
   const dispatch = useDispatch();
 
@@ -31,10 +32,14 @@ const PostList = () => {
   }
 
   return (
+    <>
     <div style={{width:'600px'}} className="m-auto mt-4">
       <h2 className="pb-4">Post {`(${numberofPost})`}</h2>
       {content}
     </div>
+    
+    </>
+    
   );
 };
 

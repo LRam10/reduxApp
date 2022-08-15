@@ -5,7 +5,7 @@ const PostAuth = ({userId})=> {
     const users = useSelector(selectAllUsers);
     const author = users.find(user => user.id === userId)
     return (
-        <span className='font-weight-light'>
+        <span className='font-weight-light mb-4'>
             by {author ? author.name : 'Unknown author'}
         </span>
     );
