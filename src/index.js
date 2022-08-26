@@ -4,10 +4,12 @@ import App from "./App";
 import { Provider } from "react-redux";
 import { store } from "./app/store";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { fetchUsers } from "./features/users/userSlice";
+import { fetchUsers} from "./features/users/userSlice";
+import { fetchPost } from "./features/post/post_slice";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 //cmd + / => comment out selected block
 //cmd + d => Selecte all similiar selected text
+store.dispatch(fetchPost());
 store.dispatch(fetchUsers());
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
