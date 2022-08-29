@@ -17,7 +17,7 @@ root.render(
     <Router>
       <Provider store={store}>
         <Routes>
-          <Route path="/*" element={<App />} />
+          <Route path={`${process.env.PUBLIC_URL}/`} element={<App />} />
         </Routes>
       </Provider>
     </Router>
