@@ -1,15 +1,15 @@
 import React from "react";
 import { useSelector} from "react-redux";
-import {selectAllPosts, getPostStatus, getpostError} from "./post_slice"
+import {selectPostIds, getPostStatus, getpostError} from "./post_slice"
 import PostExcerpt from "./PostExcerpt";
 
 const PostList = () => {
 
 
-  const posts = useSelector(selectAllPosts);
+  const orderPostsIds = useSelector(selectPostIds);
   const postsStatus = useSelector(getPostStatus);
   const postsError = useSelector(getpostError);
-  const numberofPost = posts.length;
+  const numberofPost = orderPostsIds.length;
   //compares dates and returns a positive or negative 1 to the sort function,
   //then creates a shallow copy of the posts array.
 
@@ -17,8 +17,7 @@ const PostList = () => {
   if (postsStatus === 'loading'){
     content = <p>Loading..</p>;
   }else if (postsStatus === 'succeeded'){
-    const orderedPost = posts.slice().sort((a,b) => b.date.localeCompare(a.date));
-    content = orderedPost.map((post)=> <PostExcerpt key={post.id} post={post}/>)
+    content = orderPostsIds.map((postId)=> <PostExcerpt key={postId} postId={postId}/>)
   }else if (postsStatus === 'failed'){
     content = <p>{postsError}</p>
   }

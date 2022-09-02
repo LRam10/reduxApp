@@ -1,9 +1,19 @@
-import { createSlice,createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+  createEntityAdapter
+} from "@reduxjs/toolkit";
 import axios from "axios";
 import { sub } from "date-fns";
 
 const POST_URL = "https://jsonplaceholder.typicode.com/posts";
 
+const postsAdapter = createEntityAdapter({
+  // Assume IDs are stored in a field other than `book.id` e.f if post id was in format of postID
+  //selectId: (book) => book.bookId,
+  sortComparer:(a,b) => b.date.localeCompare(a.date),
+})
 export const fetchPost = createAsyncThunk("post/fetchPosts", async () => {
   const response = await axios.get(POST_URL);
   return response.data;
@@ -17,30 +27,35 @@ export const addNewPost = createAsyncThunk(
   }
 );
 
-export const updatePost = createAsyncThunk('post/updatePost',async (initialPost)=>{
-const {id} = initialPost;
-const response = await axios.put(`${POST_URL}/${id}`, initialPost);
-return response.data;
-});
+export const updatePost = createAsyncThunk(
+  "post/updatePost",
+  async (initialPost) => {
+    const { id } = initialPost;
+    const response = await axios.put(`${POST_URL}/${id}`, initialPost);
+    return response.data;
+  }
+);
 
-export const deletePost = createAsyncThunk('post/deletePost', async(initialPost)=>{
-const { id } = initialPost;
-const response = await axios.delete(`${POST_URL}/${id}`);
-if (response?.status === 200 ) return initialPost;
-return `${response?.status}: ${response.statusText}`;
-});
-const initialState = {
-  posts: [],
+export const deletePost = createAsyncThunk(
+  "post/deletePost",
+  async (initialPost) => {
+    const { id } = initialPost;
+    const response = await axios.delete(`${POST_URL}/${id}`);
+    if (response?.status === 200) return initialPost;
+    return `${response?.status}: ${response.statusText}`;
+  }
+);
+const initialState =postsAdapter.getInitialState({
   status: "idle", //'idle' | 'loading' | 'succeeded' | `failed'
   error: null,
-};
+}); 
 const postSlice = createSlice({
   name: "posts",
   initialState,
   reducers: {
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload;
-      const existingPost = state.posts.find((post) => post.id === postId);
+      const existingPost = state.entities[postId];
       if (existingPost) {
         existingPost.reactions[reaction]++;
       }
@@ -66,7 +81,7 @@ const postSlice = createSlice({
           return post;
         });
         //add any fetched posts to the array
-        state.posts = loadedPosts;
+        postsAdapter.upsertMany(state,loadedPosts);
       })
       .addCase(fetchPost.rejected, (state, action) => {
         state.status = "failed";
@@ -83,34 +98,43 @@ const postSlice = createSlice({
           tea: 0,
         };
         console.log(action.payload);
-        state.posts.push(action.payload);
+        postsAdapter.addOne(state,action.payload);
       })
-      .addCase(updatePost.fulfilled,(state, action)=>{
-        if(!action.payload?.id){
-          console.log('Update could not complete');
+      .addCase(updatePost.fulfilled, (state, action) => {
+        if (!action.payload?.id) {
+          console.log("Update could not complete");
           console.log(action.payload);
           return;
         }
-        const { id } = action.payload;
         action.payload.date = new Date().toISOString();
-        const posts = state.posts.filter(post => post.id !== id);
-        state.posts = [...posts, action.payload];
+        postsAdapter.upsertOne(state, action.payload);
       })
-      .addCase(deletePost.fulfilled,(state, action)=>{
-        if (!action.payload?.id){
-          console.log('Delete Could not be Deleted');
+      .addCase(deletePost.fulfilled, (state, action) => {
+        if (!action.payload?.id) {
+          console.log("Delete Could not be Deleted");
           console.log(action.payload);
           return;
         }
         const { id } = action.payload;
-        const posts = state.posts.filter(post => post.id !==id);
-        state.posts = posts;
+        postsAdapter.removeOne(state,id);
       });
   },
 });
-export const selectAllPosts = (state) => state.posts.posts;
+
+
+export const {
+  selectAll:SelectAllPost,
+  selectById:selectPostById,
+  selectIds: selectPostIds
+} = postsAdapter.getSelectors(state => state.posts);
+
 export const getPostStatus = (state) => state.posts.status;
 export const getpostError = (state) => state.posts.error;
-export const selectPostById = (state,postId) => state.posts.posts.find(post => post.id === postId); 
+
+// Memomaize Selector
+// export const selectPostByUser = createSelector(
+//   [selectAllPosts, (state, userId) => userId],
+//   (post, userId) => posts.filter((post) => post.userId === userId)
+// );
 export const { reactionAdded } = postSlice.actions;
 export default postSlice.reducer;
